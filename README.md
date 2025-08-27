@@ -1,293 +1,178 @@
-# Project Minotaur: High-Frequency BTC Trading with Dollar Bars & CNN-Transformer Architecture
+# Project Minotaur: Multi-Timeframe Crypto Signal Model (5 m / 15 m / 4 h)
 
-## Overview
+## 1 · Project Overview
 
-Project Minotaur is an end-to-end machine learning pipeline for high-frequency cryptocurrency trading, specifically designed for BTC/USDT. The system processes tick-level data through a sophisticated multi-resolution feature engineering pipeline, culminating in a CNN-Transformer deep learning model optimized for predicting profitable trading opportunities.
+Minotaur is an end-to-end research pipeline for BTC/USDT that transforms raw OHLCV data on **5-minute, 15-minute, and 4-hour** intervals into more than 600 engineered features, then trains a **CNN-Transformer** classifier to predict if price will reach a 2 : 1 take-profit before an adaptive stop-loss.
 
-**Key Achievement**: Historical runs have demonstrated promising performance with test AUC scores reaching **~0.68** and precision of **~0.60** on 2:1 reward-to-risk targets, indicating potential profitability for systematic trading strategies.
+*Historical benchmark*: a single-stack CNN-Transformer (Run 038) achieved **AUC ≈ 0.68** and **precision ≈ 0.60** (calibrated) on unseen test data. The current code base reproduces and extends that pipeline with a fully modular feature engine, Optuna hyper-parameter search, and isotonic probability calibration.
 
-## Architecture & Innovation
-
-### 1. Data Processing Pipeline
-
-The system employs a novel **Dollar Bar** approach rather than traditional time-based bars, addressing the fundamental problem of information loss in fixed-time aggregation:
-
-#### Phase 1: Tick Data Cleaning
-- Converts raw CSV tick data to optimized Parquet format
-- Standardizes timestamps to UTC with nanosecond precision
-- Ensures consistent schema: `timestamp`, `price`, `quantity`, `quote_quantity`, `isBuyerMaker`
-
-#### Phase 2: Dollar Bar Generation
-- **Innovation**: Aggregates ticks based on fixed dollar volume ($2M USDT threshold) rather than time
-- **Benefits**: Each bar represents consistent economic activity, better handling BTC's volatility
-- **Microstructure Features**: Calculates advanced intra-bar metrics:
-  - Trade imbalance (buy vs sell pressure)
-  - Tick price volatility within bars
-  - Taker buy/sell ratios
-  - Price skewness and kurtosis
-  - Directional change counts
-
-#### Phase 3: Multi-Resolution Feature Engineering
-The `MinotaurFeatureEngine` creates features across three temporal resolutions:
-- **Short bars**: Base $2M dollar bars (~2-5 minutes typical duration)
-- **Medium bars**: Aggregated from 10x short bars (~20-50M volume)
-- **Long bars**: Aggregated from 16x medium bars (~320M+ volume)
-
-**Feature Categories**:
-- **Technical Indicators**: 15+ TA-Lib indicators (RSI, MACD, ATR, Bollinger Bands, etc.) across all resolutions
-- **Price Dynamics**: Log returns, volatility measures, price momentum
-- **Volume Profile**: Point of Control (POC), Value Area High/Low for multiple timeframes
-- **Market Microstructure**: Order flow imbalance, trade intensity metrics
-- **Temporal Features**: Cyclical time encoding (hour, day of week)
-- **Regime Detection**: Bull/bear/choppy market classification
-
-### 2. Time-Based Bars Integration
-Parallel processing of traditional time bars (1-minute, 15-minute, 4-hour) provides complementary perspective:
-- **Volume Profile Analysis**: POC, VAH, VAL calculations across multiple windows
-- **Stochastic Oscillator Flags**: Overbought/oversold regime detection
-- **Divergence Analysis**: Price-momentum divergences across timeframes
-
-### 3. Feature Consolidation
-The final dataset merges multi-resolution dollar bars with time-based features, resulting in:
-- **Scale**: ~5.4M samples, 600+ features (before selection)
-- **Coverage**: August 2017 - April 2024 (7+ years of BTC history)
-- **Alignment**: All features timestamp-aligned using sophisticated merge strategies
-
-## Model Architecture
-
-### CNN-Transformer Hybrid Design
-
-The model combines the pattern recognition strengths of CNNs with the sequence modeling capabilities of Transformers:
-
-```
-Input: (batch_size, sequence_length=60, features=~100-600)
-    ↓
-[CNN Stack - 3 Layers]
-    Conv1D → BatchNorm → SpatialDropout1D
-    Filters: [64, 64, 64] | Kernels: [3, 5, 7] | Dilations: [1, 2, 3]
-    Activation: GELU with Gated Linear Units (GLUs)
-    Residual Connections: ResNet-style skip connections
-    ↓
-[Learned Downsampling]
-    Strided Conv1D (kernel=2, stride=2) replaces MaxPooling
-    ↓
-[Feature Gating Mechanism]
-    Dense(sigmoid) → Element-wise gating of feature maps
-    ↓
-[Projection Layer]
-    Dense layer to match Transformer d_model dimension
-    ↓
-[Positional Encoding]
-    Sinusoidal position embeddings
-    ↓
-[Transformer Encoder Blocks - 1-3 layers]
-    Pre-Layer Normalization
-    Multi-Head Attention (4-8 heads, causal masking)
-    Feed-Forward Networks (GELU activation)
-    Residual connections & dropout
-    ↓
-[Attention Pooling]
-    Learned attention weights for sequence aggregation
-    (replaces GlobalAveragePooling1D)
-    ↓
-[MLP Head - 1-2 layers]
-    Dense(32-128) → GELU → Dropout → Dense(1, sigmoid)
-```
-
-### Advanced Training Techniques
-
-#### Hyperparameter Optimization with Optuna
-- **Search Space**: 15+ hyperparameters optimized simultaneously
-- **Key Parameters**:
-  - Learning rate: 1e-6 to 6e-5 (log scale)
-  - CNN filters, kernels, dilations per layer
-  - Transformer heads (1-8), head size (32-64)
-  - Dropout rates: CNN (0.05-0.3), Transformer (0.1-0.25)
-  - Focal Loss parameters (α: 0.3-0.7, γ: 1.0-3.0)
-
-#### Loss Function & Optimization
-- **Focal Loss**: Addresses class imbalance (~33% positive class)
-- **AdamW Optimizer**: Weight decay regularization
-- **Learning Rate Schedule**: Linear warmup + Cosine decay
-- **Regularization**: L2 regularization, multiple dropout layers
-
-#### Advanced Callbacks
-- **F1EvalCallback**: Real-time F1 optimization with threshold tuning
-- **Early Stopping**: Prevents overfitting based on validation F1
-- **Model Checkpointing**: Saves best models based on validation AUC
-
-#### Probability Calibration
-- **Isotonic Regression**: Post-hoc calibration for reliable probability estimates
-- **Threshold Optimization**: Fine-tuned decision boundaries on calibrated probabilities
-- **Performance**: Critical for real-world trading applications
-
-## Target Definition & Strategy
-
-### Adaptive Stop-Loss/Take-Profit System
-The model predicts binary outcomes based on sophisticated target calculation:
-
-```python
-# Adaptive target calculation
-stop_loss = max(min_sl_pct * entry_price, atr_multiplier * atr_period)
-take_profit = 2.0 * stop_loss  # 2:1 reward-to-risk ratio
-
-target = 1 if price_hits_tp_before_sl else 0
-```
-
-**Parameters**:
-- `min_sl_pct`: 1.0% (minimum stop-loss)
-- `atr_period`: 14 (volatility calculation window)
-- `atr_multiplier`: 1.5 (volatility-based stop scaling)
-- `reward_risk_ratio`: 2.0 (risk-adjusted returns)
-
-## Performance Results
-
-### Historical Benchmark (Run 038)
-- **Test AUC**: 0.682
-- **Test Precision**: 0.596 (at optimized threshold)
-- **Test Recall**: 0.280
-- **Test F1**: 0.383
-
-### Recent Minotaur Results
-Recent experiments with the full pipeline have shown:
-- **Validation AUC**: 0.55-0.56 range
-- **F1 Scores**: 0.35-0.50 range
-- **Feature Count**: Successfully reduced from 611 to 100 top features using RandomForest importance
-
-### Performance Analysis
-Based on 2:1 reward-to-risk ratio and historical metrics:
-- **Expected Value per Signal**: ~$81 (on $100 risk per trade)
-- **Estimated Annual Signals**: ~280 (on test data)
-- **Theoretical Annual Profit**: ~$22,700 (before costs/slippage)
-
-*Note: These are theoretical estimates for model comparison, not guaranteed trading results.*
-
-## Repository Structure
-
-```
-minotaur/
-├── scripts/
-│   ├── phase1_clean_ticks.py          # Tick data preprocessing
-│   ├── phase2_generate_dollar_bars.py  # Dollar bar generation
-│   ├── phase3_process_historical_features.py  # Feature engineering
-│   ├── minotaur_feature_engine.py     # Core feature engine
-│   ├── consolidate_features.py        # Multi-resolution merging
-│   └── time_based_processing/         # Time bar processing
-│       ├── generate_time_bars.py
-│       ├── calculate_time_bar_features.py
-│       ├── add_volume_profile.py
-│       └── add_stochastic_flags.py
-├── model_training/
-│   └── minotaur_v1.py                 # Main training script with Optuna
-├── research/                          # Technical documentation
-└── research2/                         # Advanced architecture research
-```
-
-## Quick Start
-
-### Prerequisites
-```bash
-# Python 3.8+
-pip install tensorflow pandas numpy scikit-learn
-pip install optuna dask pyarrow
-pip install TA-Lib  # See platform-specific instructions
-pip install volprofile  # For volume profile features
-```
-
-### Basic Usage
-
-1. **Process Tick Data**:
-```bash
-python scripts/phase1_clean_ticks.py --input-dir raw_ticks/ --output-dir data/cleaned_tick_data/
-```
-
-2. **Generate Dollar Bars**:
-```bash
-python scripts/phase2_generate_dollar_bars.py --input-dir data/cleaned_tick_data/ --threshold 2000000
-```
-
-3. **Calculate Features**:
-```bash
-python scripts/phase3_process_historical_features.py --dollar-bars-dir data/dollar_bars/2M/
-```
-
-4. **Train Model (Single Run)**:
-```bash
-python model_training/minotaur_v1.py --no-optuna --epochs 50 \
-  --feature-parquet data/consolidated_features_targets_all.parquet
-```
-
-5. **Hyperparameter Optimization**:
-```bash
-python model_training/minotaur_v1.py --n-trials 50 --epochs 100 \
-  --feature-parquet data/consolidated_features_targets_all.parquet \
-  --optuna-study-name "minotaur_optimization"
-```
-
-## Advanced Features
-
-### Feature Selection
-- **RandomForest Importance**: Automated feature ranking and selection
-- **Multicollinearity Removal**: VIF-based redundancy elimination
-- **Domain Knowledge**: Manual curation of financially meaningful features
-
-### Model Variants
-- **Single-stack CNN-Transformer**: Current production architecture
-- **Multi-branch CNN**: Experimental separate processing of feature groups
-- **Attention Mechanisms**: Grouped Query Attention, standard Multi-Head Attention
-
-### Integration Options
-- **Weights & Biases**: Optional experiment tracking (set `--use-wandb`)
-- **TensorBoard**: Built-in training visualization
-- **Custom Callbacks**: Extensible training pipeline
-
-## Data Requirements
-
-### Input Format
-Tick data should follow this schema:
-```
-timestamp,price,quantity,quote_quantity,isBuyerMaker
-2023-01-01 00:00:00.123456,16500.50,0.1,1650.05,true
-```
-
-### Storage Recommendations
-- **Tick Data**: ~50GB for 7 years BTC/USDT
-- **Dollar Bars**: ~500MB for processed bars
-- **Features**: ~1-5GB for full feature set
-- **Models**: ~10-50MB per trained model
-
-## Research & Development
-
-### Current Investigations
-- **Mamba Architecture**: State-space models for sequence processing
-- **Volume Profile Integration**: Enhanced market microstructure features
-- **Multi-timeframe Fusion**: Optimal combination of dollar and time bars
-
-### Performance Optimization
-- **Dask Integration**: Distributed feature processing
-- **Memory Management**: Chunked processing for large datasets
-- **GPU Acceleration**: TensorFlow GPU support for training
-
-## License & Disclaimer
-
-This project is for educational and research purposes. Cryptocurrency trading involves substantial risk of loss. Past performance does not guarantee future results. The authors are not responsible for any financial losses incurred from using this software.
-
-## Citation
-
-If you use this work in your research, please cite:
-```bibtex
-@misc{minotaur2024,
-  title={Project Minotaur: High-Frequency Cryptocurrency Trading with Dollar Bars and CNN-Transformer Architecture},
-  author={[Your Name]},
-  year={2024},
-  url={https://github.com/[username]/project-minotaur}
-}
-```
-
-## Contributing
-
-This is a research project. For questions or collaboration opportunities, please open an issue or submit a pull request.
+> **Note**  Earlier experiments with tick-level *dollar bars* are not part of the public workflow and are intentionally omitted from this README.
 
 ---
 
-*Built with TensorFlow, Optuna, and a passion for quantitative finance.*
+## 2 · Data Flow at a Glance
+
+```
+Binance BTC/USDT 5 m CSV  ─┐
+                          │   ┌────────────┐
+Binance BTC/USDT 15 m CSV ─┼──▶│ Feature    │──┐  5 m sequences  │
+                          │   │ Engine V2  │  ├─ 15 m sequences │
+Binance BTC/USDT 4 h CSV  ─┘   └────────────┘  └─ 4 h sequences  ▼
+                                                 CNN-Transformer → Calibrated probs → Threshold → Signal
+```
+
+1. **Raw OHLCV ingestion** (`data_preparation_pipeline/`)
+2. **Feature generation** (`NN_trading_pipeline/feature_engine_v2.py`)
+3. **Dataset assembly & scaling** (`chimera_5_19_optuna.py`)
+4. **Model training / Optuna search** (`model_training/minotaur_v1.py`)
+5. **Isotonic regression calibration + threshold optimisation**
+
+---
+
+## 3 · Feature Engineering (FeatureEngine V2)
+
+The engine is fully streaming-compatible; it can calculate features live bar-by-bar once a warm-up history is buffered.
+
+### 3.1 Core OHLCV Inputs
+
+| Timeframe | Columns |
+|-----------|---------|
+| 5 m       | Open, High, Low, Close, Volume |
+| 15 m (3×) | aggregated from 5 m |
+| 4 h (48×) | aggregated |
+
+### 3.2 Technical Indicator Families
+
+* **Traditional TA-Lib** (per timeframe)
+  * SMA/EMA (5→500 periods)
+  * RSI, ATR/NATR, ADX, MACD, StochK/D, BBands, OBV, MFI, CCI
+* **Rolling Stats**
+  * Rolling mean / stdDev of log-returns
+  * Percent rank / z-score
+* **Volatility Metrics**
+  * `volatility_N_tf` = stdDev(log-returns, _N_)
+  * Multi-time-frame (MTF) volatility ratios
+* **Divergence Detection** (`divergence_calculator.py`)
+  * Bull / bear **RSI-14 divergences** on 15 m & 4 h (RSI 30/70 classic OR 40/60 "robust" thresholds)
+* **Trend Regimes**
+  * `Trend4H_State`: price vs SMA-200 on 4 h
+  * Generic `TrendX_State` for arbitrary X (e.g., 15 m, 1 h)
+* **Volatility & Volume Regimes**
+  * 3-state quantile bucketing of ATR & Volume (`Vol5m_State`, `Volume5m_State`)
+* **Candlestick Patterns**
+  * TA-Lib CDL\, one-hot encoded per 5 m bar
+* **Time Features**
+  * Hour of day, day of week (cyclic sine/cosine pairs)
+
+### 3.3 Feature Selection
+
+A separate RF-importance script ranks features; the top-N list (100 by default) is read by the training script for rapid experimentation. Zero-variance & high-VIF columns are pruned automatically.
+
+---
+
+## 4 · Target Definition
+
+Adaptive stop-loss / take-profit computed **per entry bar**:
+
+```python
+sl_dist = max(min_sl_pct * close, atr_multiplier * atr(close, atr_period))
+tp_dist = reward_risk_ratio * sl_dist  # default 2.0
+
+label = 1 if future_high ≥ close + tp_dist before future_low ≤ close − sl_dist else 0
+```
+
+Typical parameters: `min_sl_pct=1%`, `atr_multiplier=1.5`, `reward_risk_ratio=2.0`.
+Class 1 frequency ≈ 33 % for BTC 2017-2024.
+
+---
+
+## 5 · Model Architecture
+
+```
+Input  (B, 60, F) ───────── Conv1D×3 (GLU-GELU, residual) ─┐
+                                                           ↓
+                                     Strided Conv (learned down-sampling)
+                                                           ↓
+                                 Feature-wise gating (Dense sigmoid ⊙)
+                                                           ↓
+                Positional Encoding + d_model projection (Dense  → 128-256)
+                                                           ↓
+            Transformer Encoder × {1-3} (heads 4-8, ff_dim 2-4×d_model)
+                                                           ↓
+                    AttentionPooling (learn weights across sequence)
+                                                           ↓
+                       MLP Head (Dense-GELU-Dropout) × {1-2}
+                                                           ↓
+                               Output sigmoid (1-unit)
+```
+
+* **Optimizer**: AdamW + linear warm-up (3 epochs) → cosine decay.
+* **Loss**: Binary Cross-Entropy **or** Focal-Loss (Optuna-tunable α, γ).
+* **Regularisation**: L2, dropout (CNN, Transformer, MLP), gradient clipping (`clipnorm=1`).
+* **Probability Calibration**: Isotonic regression on validation predictions.
+
+---
+
+## 6 · Hyper-Parameter Optimisation (Optuna)
+
+| Group          | Search Space (examples) |
+|----------------|-------------------------|
+| `learning_rate`| 1e-6 – 6e-5 (log-uniform)|
+| `weight_decay` | 1e-5 – 8e-4             |
+| CNN layers     | 1 – 3 layers × filters{16-128}, kernel{3,5,7}, dilation{1-4}|
+| Transformer    | blocks{1-3}, heads{4-8}, head_size{32-64}, ff_dim_factor{2-4}|
+| Dropouts       | 0.05 – 0.30             |
+| Batch size     | 32 or 64               |
+| Focal α/γ      | 0.3 – 0.7 / 1.0 – 3.0    |
+
+Trials are stopped early via `val_auc` plateau & `best_val_f1` stagnation.
+
+---
+
+## 7 · Performance Snapshot
+
+| Run ID | Dataset | Features | SeqLen | Val AUC | Calibrated Test AUC | Precision | Recall | F1 |
+|--------|---------|----------|--------|---------|---------------------|-----------|--------|----|
+| **038**| 5 m base (legacy) | 88 | 60 | 0.71 | **0.68** | 0.60 | 0.28 | 0.38 |
+| 2025-05 Optuna best | 5m+15m+4h top-100 | 100 | 60 | 0.56 | 0.54 | 0.47 | 0.31 | 0.37 |
+
+> *Performance varies with market regimes; above table is indicative.*
+
+---
+
+## 8 · Quick Start
+
+```bash
+pip install -r requirements.txt  # TensorFlow 2.15+, TA-Lib, Optuna, Dask …
+
+# 1. Create parquet features (offline batch example)
+python NN_trading_pipeline/main_pipeline.py \
+  --ohlcv-5m data/binance/BTCUSDT_5m.csv \
+  --ohlcv-15m data/binance/BTCUSDT_15m.csv \
+  --ohlcv-4h data/binance/BTCUSDT_4h.csv \
+  --out-parquet data/features/BTCUSDT_full.parquet
+
+# 2. Train a single model (no Optuna)
+python model_training/minotaur_v1.py \
+  --no-optuna --epochs 50 --feature-parquet data/features/BTCUSDT_full.parquet
+
+# 3. Hyper-parameter sweep (50 trials)
+python model_training/minotaur_v1.py \
+  --n-trials 50 --epochs 100 --feature-parquet data/features/BTCUSDT_full.parquet \
+  --optuna-study-name minotaur_sweep_May25
+```
+
+---
+
+## 9 · Research Directions
+
+* **Mamba state-space models** for ultra-long sequences
+* **Cross-asset feature transfer** (ETH, SOL)
+* **On-chain metrics** integration
+* **Reinforcement-learning overlay** for position sizing
+
+---
+
+## 10 · License & Disclaimer
+
+This repository is released for educational and research purposes only. It is **not** financial advice. Trading cryptocurrencies is highly speculative. Use at your own risk.
