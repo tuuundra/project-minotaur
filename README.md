@@ -191,6 +191,20 @@ Input  (B, 60, F) ───────── Conv1D×3 (GLU-GELU, residual) ─
 
 Trials are stopped early via `val_auc` plateau & `best_val_f1` stagnation.
 
+## 6.1 · Feature Correlation & Multicollinearity
+
+To avoid redundant signals and reduce model variance we performed an extensive **correlation analysis** on the 600-feature candidate set.
+
+* **Method**  `scripts/eda_analysis.py` (or `eda_time_bars_analysis.py`) loads a stratified 100 k-row sample and computes the full Pearson correlation matrix.
+* **Visualization**  Heat-map (example shown below) highlights blocks of highly correlated indicators—e.g. overlapping MAs, duplicated RSI windows, volume variants.
+* **Threshold pruning**  Pairs with |ρ| > 0.95 are filtered ⇒ feature count ↓ ~15 %.
+* **Variance Inflation Factor (VIF)**  Additional pass removes features with VIF > 10.
+* **Model-based ranking**  RandomForest feature importance on the training split ⇒ top-100 list (`top_100_rf_features.txt`) used for the fastest Optuna sweep.
+
+> ![Correlation matrix heat-map](./docs/corr_matrix_full.png)
+
+*Outcome*: final training set balances diversity (trend, momentum, volatility, regime) while eliminating multicollinearity, leading to faster convergence and improved generalisation.
+
 ---
 
 ## 7 · Performance Snapshot
