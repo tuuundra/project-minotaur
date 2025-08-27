@@ -201,7 +201,7 @@ To avoid redundant signals and reduce model variance we performed an extensive *
 * **Variance Inflation Factor (VIF)**  Additional pass removes features with VIF > 10.
 * **Model-based ranking**  RandomForest feature importance on the training split ⇒ top-100 list (`top_100_rf_features.txt`) used for the fastest Optuna sweep.
 
-> ![Correlation matrix heat-map](./docs/corr_matrix_full.png)
+> ![Correlation matrix heat-map](./full_correlation_heatmap.png)
 
 *Outcome*: final training set balances diversity (trend, momentum, volatility, regime) while eliminating multicollinearity, leading to faster convergence and improved generalisation.
 
