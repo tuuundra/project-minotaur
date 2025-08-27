@@ -106,10 +106,74 @@ Input  (B, 60, F) ───────── Conv1D×3 (GLU-GELU, residual) ─
                                Output sigmoid (1-unit)
 ```
 
-* **Optimizer**: AdamW + linear warm-up (3 epochs) → cosine decay.
-* **Loss**: Binary Cross-Entropy **or** Focal-Loss (Optuna-tunable α, γ).
-* **Regularisation**: L2, dropout (CNN, Transformer, MLP), gradient clipping (`clipnorm=1`).
-* **Probability Calibration**: Isotonic regression on validation predictions.
+### 5.1 CNN Stack Details
+
+**Layer Configuration**:
+- **3 Conv1D layers** with fixed architecture:
+  - Layer 1: `filters=64, kernel=3, dilation=1`
+  - Layer 2: `filters=64, kernel=5, dilation=2` 
+  - Layer 3: `filters=64, kernel=7, dilation=3`
+- **Gated Linear Units (GLUs)**: Each conv layer uses GLU activation with GELU in the data path
+- **Residual Connections**: ResNet-style skip connections around each GLU block
+- **Normalization**: BatchNormalization after each conv layer
+- **Dropout**: SpatialDropout1D (rate: 0.05-0.3, Optuna-tunable)
+
+**Strided Convolution Downsampling**:
+- Replaces traditional MaxPooling1D with learnable downsampling
+- `Conv1D(filters=64, kernel_size=2, strides=2, padding='same')`
+- Reduces sequence length by factor of 2 (60 → 30 timesteps)
+- Maintains 64 feature channels for Transformer input
+
+**Feature Gating Mechanism**:
+- `Dense(64, activation='sigmoid')` applied to strided conv output
+- Element-wise multiplication: `gated_features = features * gate_weights`
+- Allows model to learn feature importance dynamically
+
+### 5.2 Transformer Configuration
+
+**Architecture Parameters**:
+- **d_model**: 128-256 (determined by `num_heads × head_size`)
+- **Encoder blocks**: 1-3 layers (Optuna search space)
+- **Multi-Head Attention**:
+  - Heads: 4-8 (categorical choice)
+  - Head size: 32-64 dimensions per head
+  - Causal masking: `use_causal_mask=True`
+- **Feed-Forward Networks**:
+  - Hidden dim: `ff_dim_factor × d_model` (factor ∈ {2, 4})
+  - Activation: GELU
+- **Pre-Layer Normalization**: Applied before attention and FFN
+- **Residual connections** around attention and FFN blocks
+- **Dropout**: 0.10-0.25 (tied across attention and FFN)
+
+**Attention Pooling**:
+- Custom learnable aggregation replacing GlobalAveragePooling1D
+- `Dense(d_model, activation='softmax')` → attention weights
+- Weighted sum across sequence dimension: `∑(attention_weights * features)`
+
+### 5.3 MLP Head Specifications
+
+**Layer Configuration** (Optuna-tunable):
+- **Layers**: 1-2 dense layers
+- **Layer 1**: 32-128 units (categorical: {32, 64, 128})
+- **Layer 2**: 16-64 units (if 2-layer) (categorical: {16, 32, 64})
+- **Activation**: GELU (hidden layers), sigmoid (output)
+- **Dropout**: Tied to transformer dropout + 0.05
+- **L2 Regularization**: Applied to all dense layers
+
+### 5.4 Training Configuration
+
+* **Optimizer**: AdamW 
+  - Learning rate: 1e-6 to 6e-5 (log-uniform)
+  - Weight decay: 1e-5 to 8e-4 (log-uniform)
+  - Gradient clipping: `clipnorm=1.0`
+* **Learning Rate Schedule**: 
+  - Linear warm-up (3 epochs) → Cosine decay
+* **Loss Functions**: 
+  - Binary Cross-Entropy (baseline)
+  - Focal Loss: α ∈ [0.3, 0.7], γ ∈ [1.0, 3.0] (Optuna-tunable)
+* **Batch Size**: 32 or 64 (categorical choice)
+* **Sequence Length**: 60 timesteps (fixed)
+* **Probability Calibration**: Isotonic regression on validation predictions
 
 ---
 
@@ -134,7 +198,7 @@ Trials are stopped early via `val_auc` plateau & `best_val_f1` stagnation.
 | Run ID | Dataset | Features | SeqLen | Val AUC | Calibrated Test AUC | Precision | Recall | F1 |
 |--------|---------|----------|--------|---------|---------------------|-----------|--------|----|
 | **038**| 5 m base (legacy) | 88 | 60 | 0.71 | **0.68** | 0.60 | 0.28 | 0.38 |
-| 2025-05 Optuna best | 5m+15m+4h top-100 | 100 | 60 | 0.56 | 0.54 | 0.47 | 0.31 | 0.37 |
+
 
 > *Performance varies with market regimes; above table is indicative.*
 
