@@ -1,0 +1,17 @@
+# data & artifacts
+data/
+outputs/
+optuna_studies/
+training_runs/
+dollar_bar_outputs/
+temp_extraction/
+**/*.parquet
+**/*.db
+**/*.keras
+**/*.joblib
+**/*.jsonl
+
+# caches & OS cruft
+__pycache__/
+*.py[cod]
+.DS_Store

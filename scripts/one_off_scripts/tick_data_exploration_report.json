@@ -1,0 +1,238 @@
+{
+  "exploration_timestamp": "2025-05-24T01:05:53.369333",
+  "file_inventory": {
+    "2017": {
+      "directory": "historical_btc_trades/2017_data",
+      "zip_files": 5,
+      "compressed_size_mb": 72.58744239807129,
+      "files": [
+        "BTCUSDT-trades-2017-09.zip",
+        "BTCUSDT-trades-2017-08.zip",
+        "BTCUSDT-trades-2017-12.zip",
+        "BTCUSDT-trades-2017-11.zip",
+        "BTCUSDT-trades-2017-10.zip"
+      ]
+    },
+    "2018": {
+      "directory": "historical_btc_trades/2018_data",
+      "zip_files": 12,
+      "compressed_size_mb": 1426.035834312439,
+      "files": [
+        "BTCUSDT-trades-2018-01.zip",
+        "BTCUSDT-trades-2018-02.zip",
+        "BTCUSDT-trades-2018-03.zip",
+        "BTCUSDT-trades-2018-07.zip",
+        "BTCUSDT-trades-2018-06.zip",
+        "BTCUSDT-trades-2018-12.zip",
+        "BTCUSDT-trades-2018-04.zip",
+        "BTCUSDT-trades-2018-10.zip",
+        "BTCUSDT-trades-2018-11.zip",
+        "BTCUSDT-trades-2018-05.zip",
+        "BTCUSDT-trades-2018-08.zip",
+        "BTCUSDT-trades-2018-09.zip"
+      ]
+    },
+    "2019": {
+      "directory": "historical_btc_trades/2019_data",
+      "zip_files": 12,
+      "compressed_size_mb": 2247.2142267227173,
+      "files": [
+        "BTCUSDT-trades-2019-09.zip",
+        "BTCUSDT-trades-2019-08.zip",
+        "BTCUSDT-trades-2019-03.zip",
+        "BTCUSDT-trades-2019-02.zip",
+        "BTCUSDT-trades-2019-01.zip",
+        "BTCUSDT-trades-2019-05.zip",
+        "BTCUSDT-trades-2019-11.zip",
+        "BTCUSDT-trades-2019-10.zip",
+        "BTCUSDT-trades-2019-04.zip",
+        "BTCUSDT-trades-2019-12.zip",
+        "BTCUSDT-trades-2019-06.zip",
+        "BTCUSDT-trades-2019-07.zip"
+      ]
+    },
+    "2020": {
+      "directory": "historical_btc_trades/2020_data",
+      "zip_files": 12,
+      "compressed_size_mb": 5027.210634231567,
+      "files": [
+        "BTCUSDT-trades-2020-05.zip",
+        "BTCUSDT-trades-2020-11.zip",
+        "BTCUSDT-trades-2020-10.zip",
+        "BTCUSDT-trades-2020-04.zip",
+        "BTCUSDT-trades-2020-12.zip",
+        "BTCUSDT-trades-2020-06.zip",
+        "BTCUSDT-trades-2020-07.zip",
+        "BTCUSDT-trades-2020-03.zip",
+        "BTCUSDT-trades-2020-02.zip",
+        "BTCUSDT-trades-2020-01.zip",
+        "BTCUSDT-trades-2020-09.zip",
+        "BTCUSDT-trades-2020-08.zip"
+      ]
+    },
+    "2021": {
+      "directory": "historical_btc_trades/2021_data",
+      "zip_files": 12,
+      "compressed_size_mb": 12869.60878944397,
+      "files": [
+        "BTCUSDT-trades-2021-08.zip",
+        "BTCUSDT-trades-2021-09.zip",
+        "BTCUSDT-trades-2021-07.zip",
+        "BTCUSDT-trades-2021-06.zip",
+        "BTCUSDT-trades-2021-12.zip",
+        "BTCUSDT-trades-2021-04.zip",
+        "BTCUSDT-trades-2021-10.zip",
+        "BTCUSDT-trades-2021-11.zip",
+        "BTCUSDT-trades-2021-05.zip",
+        "BTCUSDT-trades-2021-01.zip",
+        "BTCUSDT-trades-2021-02.zip",
+        "BTCUSDT-trades-2021-03.zip"
+      ]
+    },
+    "2022": {
+      "directory": "historical_btc_trades/2022_data",
+      "zip_files": 12,
+      "compressed_size_mb": 17023.839853286743,
+      "files": [
+        "BTCUSDT-trades-2022-01.zip",
+        "BTCUSDT-trades-2022-03.zip",
+        "BTCUSDT-trades-2022-02.zip",
+        "BTCUSDT-trades-2022-12.zip",
+        "BTCUSDT-trades-2022-06.zip",
+        "BTCUSDT-trades-2022-07.zip",
+        "BTCUSDT-trades-2022-05.zip",
+        "BTCUSDT-trades-2022-11.zip",
+        "BTCUSDT-trades-2022-10.zip",
+        "BTCUSDT-trades-2022-04.zip",
+        "BTCUSDT-trades-2022-09.zip",
+        "BTCUSDT-trades-2022-08.zip"
+      ]
+    },
+    "2023": {
+      "directory": "historical_btc_trades/2023_data",
+      "zip_files": 12,
+      "compressed_size_mb": 10708.57578754425,
+      "files": [
+        "BTCUSDT-trades-2023-08.zip",
+        "BTCUSDT-trades-2023-09.zip",
+        "BTCUSDT-trades-2023-02.zip",
+        "BTCUSDT-trades-2023-03.zip",
+        "BTCUSDT-trades-2023-01.zip",
+        "BTCUSDT-trades-2023-04.zip",
+        "BTCUSDT-trades-2023-10.zip",
+        "BTCUSDT-trades-2023-11.zip",
+        "BTCUSDT-trades-2023-05.zip",
+        "BTCUSDT-trades-2023-07.zip",
+        "BTCUSDT-trades-2023-06.zip",
+        "BTCUSDT-trades-2023-12.zip"
+      ]
+    },
+    "2024": {
+      "directory": "historical_btc_trades/2024_data",
+      "zip_files": 4,
+      "compressed_size_mb": 2865.3878326416016,
+      "files": [
+        "BTCUSDT-trades-2024-02.zip",
+        "BTCUSDT-trades-2024-03.zip",
+        "BTCUSDT-trades-2024-01.zip",
+        "BTCUSDT-trades-2024-04.zip"
+      ]
+    }
+  },
+  "sample_stats": {
+    "2017": {
+      "filename": "BTCUSDT-trades-2017-12.zip",
+      "sample_rows": 1000,
+      "date_range": "2017-12-01 00:00:01.345000 to 2017-12-01 00:39:44.543000",
+      "price_range": "$9712.00 - $9900.03",
+      "avg_trade_size": 0.166989497,
+      "avg_quote_volume": 1644.32451819934,
+      "buyer_maker_ratio": 0.401,
+      "data_types": {
+        "trade_id": "int64",
+        "price": "float64",
+        "quantity": "float64",
+        "quote_quantity": "float64",
+        "timestamp": "int64",
+        "is_buyer_maker": "bool",
+        "is_best_match": "bool",
+        "datetime": "datetime64[ns]"
+      },
+      "missing_values": {
+        "trade_id": 0,
+        "price": 0,
+        "quantity": 0,
+        "quote_quantity": 0,
+        "timestamp": 0,
+        "is_buyer_maker": 0,
+        "is_best_match": 0,
+        "datetime": 0
+      }
+    },
+    "2019": {
+      "filename": "BTCUSDT-trades-2019-11.zip",
+      "sample_rows": 1000,
+      "date_range": "2019-11-01 00:00:00.114000 to 2019-11-01 00:03:53.135000",
+      "price_range": "$9122.59 - $9144.70",
+      "avg_trade_size": 0.16139351500000002,
+      "avg_quote_volume": 1474.10875330315,
+      "buyer_maker_ratio": 0.338,
+      "data_types": {
+        "trade_id": "int64",
+        "price": "float64",
+        "quantity": "float64",
+        "quote_quantity": "float64",
+        "timestamp": "int64",
+        "is_buyer_maker": "bool",
+        "is_best_match": "bool",
+        "datetime": "datetime64[ns]"
+      },
+      "missing_values": {
+        "trade_id": 0,
+        "price": 0,
+        "quantity": 0,
+        "quote_quantity": 0,
+        "timestamp": 0,
+        "is_buyer_maker": 0,
+        "is_best_match": 0,
+        "datetime": 0
+      }
+    },
+    "2021": {
+      "filename": "BTCUSDT-trades-2021-10.zip",
+      "sample_rows": 1000,
+      "date_range": "2021-10-01 00:00:00.199000 to 2021-10-01 00:01:27.041000",
+      "price_range": "$43798.31 - $43870.87",
+      "avg_trade_size": 0.028307879999999997,
+      "avg_quote_volume": 1240.6699803837998,
+      "buyer_maker_ratio": 0.448,
+      "data_types": {
+        "trade_id": "int64",
+        "price": "float64",
+        "quantity": "float64",
+        "quote_quantity": "float64",
+        "timestamp": "int64",
+        "is_buyer_maker": "bool",
+        "is_best_match": "bool",
+        "datetime": "datetime64[ns]"
+      },
+      "missing_values": {
+        "trade_id": 0,
+        "price": 0,
+        "quantity": 0,
+        "quote_quantity": 0,
+        "timestamp": 0,
+        "is_buyer_maker": 0,
+        "is_best_match": 0,
+        "datetime": 0
+      }
+    }
+  },
+  "total_estimates": {
+    "total_files": 81,
+    "compressed_gb": 51.016074609942734,
+    "estimated_uncompressed_gb": 204.06429843977094,
+    "estimated_total_trades": 6981804.298318003
+  },
+  "consistency_issues": []
+}
